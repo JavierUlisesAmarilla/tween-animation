@@ -17,10 +17,13 @@ export const Scene = () => {
     if (!isFirstRender) {
       return
     }
-    console.log('isFirstRender: ', isFirstRender);
-    (() => {
+    (async () => {
+      const el = document.createElement('div')
+      el.className = 'absolute w-screen h-screen'
+      sceneRef.current.innerHTML = ''
+      sceneRef.current.appendChild(el)
       const newWorld = new World()
-      newWorld.init({domEl: sceneRef.current})
+      await newWorld.init({domEl: el})
       setWorld(newWorld)
     })()
     isFirstRender = false

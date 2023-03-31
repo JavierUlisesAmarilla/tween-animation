@@ -1,6 +1,7 @@
 import * as THREE from 'three'
-import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls'
+// import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls'
 import Stats from 'stats-js'
+import TWEEN from '@tweenjs/tween.js'
 import {assertDefined} from '../utils/assert'
 import {
   BACK_COLOR,
@@ -57,7 +58,7 @@ export class World extends THREE.EventDispatcher {
     domEl.appendChild(this.renderer.domElement)
 
     // Orbit Controls
-    this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement)
+    // this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement)
 
     // Stats
     if (ENABLE_STATS) {
@@ -65,24 +66,48 @@ export class World extends THREE.EventDispatcher {
       domEl.appendChild(this.stats.dom)
     }
 
-    // Main
+    // Main (Custom Mesh)
     const planeMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(10, 10),
+        new THREE.PlaneGeometry(1, 1),
         new THREE.MeshStandardMaterial({
           color: 'red',
         }),
     )
+    planeMesh.position.set(-10, 2, 0)
     this.scene.add(planeMesh)
+    new TWEEN.Tween(planeMesh.position).to(new THREE.Vector3(10, 2, 0), 2000).easing(TWEEN.Easing.Exponential.InOut).start()
+
+    // Main (Instanced Mesh)
+    const planeInstMesh = new THREE.InstancedMesh(
+        new THREE.PlaneGeometry(1, 1),
+        new THREE.MeshStandardMaterial({
+          color: 'green',
+        }),
+        1,
+    )
+    this.scene.add(planeInstMesh)
+    const srcMatrix4 = new THREE.Matrix4().multiplyMatrices(
+        new THREE.Matrix4().setPosition(-10, -2, 0),
+        new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(), 0),
+    )
+    const desMatrix4 = new THREE.Matrix4().multiplyMatrices(
+        new THREE.Matrix4().setPosition(10, -2, 0),
+        new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(), 0),
+    )
+    new TWEEN.Tween(srcMatrix4).to(desMatrix4, 2000).onUpdate(() => {
+      planeInstMesh.setMatrixAt(0, srcMatrix4)
+      planeInstMesh.instanceMatrix.needsUpdate = true
+    }).easing(TWEEN.Easing.Exponential.InOut).start()
 
     // Animate
     this.animate()
 
     // Events
-    // window.addEventListener('resize', this.onWindowResize)
-    // domEl.addEventListener('mousedown', this.onMouseDown)
-    // domEl.addEventListener('mousemove', this.onMouseMove)
-    // domEl.addEventListener('mouseup', this.onMouseUp)
-    // domEl.addEventListener('mousewheel', this.onMouseWheel)
+    window.addEventListener('resize', this.onWindowResize)
+    domEl.addEventListener('mousedown', this.onMouseDown)
+    domEl.addEventListener('mousemove', this.onMouseMove)
+    domEl.addEventListener('mouseup', this.onMouseUp)
+    domEl.addEventListener('mousewheel', this.onMouseWheel)
   }
 
 
@@ -92,6 +117,7 @@ export class World extends THREE.EventDispatcher {
       if (this.stats) {
         this.stats.begin()
       }
+      TWEEN.update()
       this.render()
       if (this.stats) {
         this.stats.end()
@@ -102,7 +128,7 @@ export class World extends THREE.EventDispatcher {
 
   render = () => {
     this.renderer.render(this.scene, this.camera)
-    this.orbitControls.update()
+    // this.orbitControls.update()
   }
 
 
